@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "143887297441",
+    "project_id": "digifarm-1304",
+    "storage_bucket": "digifarm-1304.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:143887297441:android:79c42d9b944e764cb139e0",
+        "android_client_info": {
+          "package_name": "com.ByteCraft.DigiFarm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBSLMiZd2bRidtoDLmazSLWWJRXpQ23WMo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

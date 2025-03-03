@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DigiFarm - Market</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-light">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="index.html"><i class="fas fa-leaf"></i> DigiFarm</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="livestock.html">Livestock</a></li>
+                    <li class="nav-item"><a class="nav-link" href="crops.html">Crops</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="market.html">Market</a></li>
+                    <li class="nav-item"><a class="nav-link" href="weather.html">Weather</a></li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <span class="text-white me-3" id="userName"></span>
+                    <button onclick="logout()" class="btn btn-outline-light">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Market Content -->
+    <div class="container mt-5 pt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Marketplace</h1>
+            <button class="btn btn-success" onclick="toggleAddForm()">
+                <i class="fas fa-plus-circle me-2"></i>Add Product
+            </button>
+        </div>
+
+        <!-- Add Product Form -->
+        <div id="addFormSection" style="display: none;" class="mb-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    Add New Product
+                </div>
+                <div class="card-body">
+                    <form id="addProductForm" onsubmit="handleAddProduct(event)">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="product_name" class="form-label">Product Name</label>
+                                <input type="text" class="form-control" id="product_name" name="product_name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <select class="form-select" id="category" name="category" required onchange="handleCategoryChange()">
+                                    <option value="">Select category</option>
+                                    <option value="Crops">Crops</option>
+                                    <option value="Livestock">Livestock</option>
+                                    <option value="Equipment">Equipment</option>
+                                    <option value="Seeds">Seeds</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Saved Items Selection -->
+                        <div id="savedItemsSection" style="display: none;" class="mb-3">
+                            <label for="saved_item" class="form-label">Select from saved items</label>
+                            <select class="form-select" id="saved_item" name="saved_item" onchange="handleSavedItemSelect()">
+                                <option value="">Select an item</option>
+                            </select>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="price" class="form-label">Price (₹)</label>
+                                <input type="number" class="form-control" id="price" name="price" min="0" step="0.01" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="quantity" class="form-label">Quantity</label>
+                                <input type="number" class="form-control" id="quantity" name="quantity" min="1" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary me-2" onclick="toggleAddForm()">Cancel</button>
+                            <button type="submit" class="btn btn-success">Add Product</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search products...">
+                    <button class="btn btn-outline-success" type="button" onclick="searchProducts()">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <select class="form-select" id="categoryFilter" onchange="filterProducts()">
+                    <option value="">All Categories</option>
+                    <option value="Crops">Crops</option>
+                    <option value="Livestock">Livestock</option>
+                    <option value="Equipment">Equipment</option>
+                    <option value="Seeds">Seeds</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Product List -->
+        <div id="productList" class="row g-4">
+            <!-- Products will be loaded here -->
+        </div>
+
+        <!-- Alert Message -->
+        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+            <div id="alertToast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body"></div>
+                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const user = localStorage.getItem('user');
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const userData = JSON.parse(user);
+                document.getElementById('userName').textContent = `${userData.first_name} ${userData.last_name}`;
+                loadProducts();
+            } catch (error) {
+                console.error('Error parsing user data:', error);
+                window.location.href = 'login.html';
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        function toggleAddForm() {
+            const formSection = document.getElementById('addFormSection');
+            const isHidden = formSection.style.display === 'none';
+            formSection.style.display = isHidden ? 'block' : 'none';
+            if (!isHidden) {
+                document.getElementById('addProductForm').reset();
+            }
+        }
+
+        async function loadProducts() {
+            try {
+                const user = JSON.parse(localStorage.getItem('user'));
+                const response = await fetch(`api/market.php?user_id=${user.id}`);
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to load products');
+                }
+
+                displayProducts(result.data);
+            } catch (error) {
+                console.error('Error loading products:', error);
+                showAlert(error.message, 'danger');
+            }
+        }
+
+        function displayProducts(products) {
+            const productList = document.getElementById('productList');
+            productList.innerHTML = '';
+
+            products.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'col-md-6 col-lg-4';
+                card.innerHTML = `
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">${product.product_name}</h5>
+                            <span class="badge bg-success mb-2">${product.category}</span>
+                            <p class="card-text">
+                                <strong>Price:</strong> ₹${product.price}<br>
+                                <strong>Quantity:</strong> ${product.quantity}<br>
+                                <strong>Description:</strong> ${product.description}
+                            </p>
+                        </div>
+                        <div class="card-footer bg-transparent border-top-0 text-end">
+                            <button class="btn btn-primary btn-sm me-2" onclick="contactSeller(${product.id})">
+                                <i class="fas fa-envelope"></i> Contact
+                            </button>
+                            ${product.user_id === JSON.parse(localStorage.getItem('user')).id ? 
+                                `<button class="btn btn-danger btn-sm" onclick="confirmDelete(${product.id})">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </button>` : ''
+                            }
+                        </div>
+                    </div>
+                `;
+                productList.appendChild(card);
+            });
+        }
+
+        async function handleAddProduct(event) {
+            event.preventDefault();
+            try {
+                const form = event.target;
+                const formData = new FormData(form);
+                const data = {};
+                formData.forEach((value, key) => {
+                    data[key] = value;
+                });
+
+                const user = JSON.parse(localStorage.getItem('user'));
+                data.user_id = user.id;
+
+                const response = await fetch('api/market.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to add product');
+                }
+
+                console.log('Product added successfully');
+                showAlert('Product added successfully');
+                form.reset();
+                toggleAddForm();
+                loadProducts();
+            } catch (error) {
+                console.error('Error adding product:', error);
+                showAlert(error.message, 'danger');
+            }
+        }
+
+        function confirmDelete(id) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                deleteProduct(id);
+            }
+        }
+
+        async function deleteProduct(id) {
+            try {
+                const response = await fetch('api/market.php', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `id=${id}`
+                });
+
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to delete product');
+                }
+
+                console.log('Product deleted successfully');
+                showAlert('Product deleted successfully');
+                loadProducts();
+            } catch (error) {
+                console.error('Error deleting product:', error);
+                showAlert(error.message, 'danger');
+            }
+        }
+
+        function searchProducts() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const category = document.getElementById('categoryFilter').value;
+            
+            const cards = document.querySelectorAll('#productList .card');
+            cards.forEach(card => {
+                const title = card.querySelector('.card-title').textContent.toLowerCase();
+                const cardCategory = card.querySelector('.badge').textContent;
+                const description = card.querySelector('.card-text').textContent.toLowerCase();
+                
+                const matchesSearch = title.includes(searchTerm) || description.includes(searchTerm);
+                const matchesCategory = !category || cardCategory === category;
+                
+                card.parentElement.style.display = matchesSearch && matchesCategory ? 'block' : 'none';
+            });
+        }
+
+        function filterProducts() {
+            searchProducts();
+        }
+
+        function contactSeller(productId) {
+            // Implement contact functionality
+            console.log('Contact feature coming soon!');
+            showAlert('Contact feature coming soon!', 'info');
+        }
+
+        async function handleCategoryChange() {
+            const category = document.getElementById('category').value;
+            const savedItemsSection = document.getElementById('savedItemsSection');
+            const savedItemSelect = document.getElementById('saved_item');
+            
+            if (category === 'Crops' || category === 'Livestock') {
+                try {
+                    const user = JSON.parse(localStorage.getItem('user'));
+                    if (!user || !user.id) {
+                        throw new Error('Please log in to access your items');
+                    }
+
+                    console.log('User ID:', user.id);
+                    const endpoint = category === 'Crops' ? 'crop.php' : 'livestock.php';
+                    const response = await fetch(`api/${endpoint}?user_id=${user.id}`);
+                    const result = await response.json();
+                    console.log('Response:', result);
+                    
+                    if (!result.success) {
+                        throw new Error(`Failed to load ${category.toLowerCase()}`);
+                    }
+
+                    savedItemSelect.innerHTML = '<option value="">Select an item</option>';
+                    if (result.data && result.data.length > 0) {
+                        result.data.forEach(item => {
+                            const itemName = category === 'Crops' ? item.crop_type : item.animal_type;
+                            savedItemSelect.innerHTML += `<option value='${JSON.stringify(item)}'>${itemName}</option>`;
+                        });
+                        if (savedItemsSection) {
+                            savedItemsSection.style.display = 'block';
+                        }
+                    } else {
+                        throw new Error(`No ${category.toLowerCase()} found. Please add some first.`);
+                    }
+                } catch (error) {
+                    console.error('Error handling category change:', error);
+                    if (savedItemsSection) {
+                        savedItemsSection.style.display = 'none';
+                    }
+                }
+            } else {
+                if (savedItemsSection) {
+                    savedItemsSection.style.display = 'none';
+                }
+            }
+        }
+
+        function handleSavedItemSelect() {
+            const savedItemSelect = document.getElementById('saved_item');
+            const selectedValue = savedItemSelect.value;
+            
+            if (selectedValue) {
+                try {
+                    const item = JSON.parse(selectedValue);
+                    document.getElementById('product_name').value = item.name;
+                    document.getElementById('description').value = item.description;
+                } catch (error) {
+                    console.error('Error loading item details:', error);
+                    showAlert('Error loading item details', 'danger');
+                }
+            }
+        }
+
+        function showAlert(message, type = 'success') {
+            const toast = document.getElementById('alertToast');
+            const toastBody = toast.querySelector('.toast-body');
+            
+            toast.className = `toast align-items-center text-white bg-${type} border-0`;
+            toastBody.textContent = message;
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        }
+    </script>
+</body>
+</html>

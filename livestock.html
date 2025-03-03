@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DigiFarm - Livestock Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-light">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="index.html"><i class="fas fa-leaf"></i> DigiFarm</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="dashboard.html">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="livestock.html">Livestock</a></li>
+                    <li class="nav-item"><a class="nav-link" href="crops.html">Crops</a></li>
+                    <li class="nav-item"><a class="nav-link" href="weather.html">Weather</a></li>
+                    <li class="nav-item"><a class="nav-link" href="market.html">Market</a></li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <span class="text-white me-3" id="userName"></span>
+                    <button onclick="logout()" class="btn btn-outline-light">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Livestock Content -->
+    <div class="container mt-5 pt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Livestock Management</h1>
+            <button class="btn btn-success" onclick="toggleAddForm()">
+                <i class="fas fa-plus-circle me-2"></i>Add Livestock
+            </button>
+        </div>
+
+        <!-- Add Livestock Form -->
+        <div id="addFormSection" style="display: none;" class="mb-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    Add New Livestock
+                </div>
+                <div class="card-body">
+                    <form id="addLivestockForm" onsubmit="handleAddLivestock(event)">
+                        <div class="mb-3">
+                            <label class="form-label">Animal Type</label>
+                            <select class="form-select" name="animal_type" required>
+                                <option value="">Select animal type</option>
+                                <option value="Dairy Cow">Dairy Cow</option>
+                                <option value="Bull">Bull</option>
+                                <option value="Goat">Goat</option>
+                                <option value="Sheep">Sheep</option>
+                                <option value="Chicken">Chicken</option>
+                                <option value="Buffalo">Buffalo</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Age (in months)</label>
+                            <input type="number" class="form-control" name="age" required min="1">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Upload Image</label>
+                            <input type="file" class="form-control" name="image" accept="image/*">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" name="notes" rows="3"></textarea>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">Save Livestock</button>
+                            <button type="button" class="btn btn-secondary" onclick="toggleAddForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Livestock List -->
+        <div class="row g-4" id="livestockList"></div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem('isLoggedIn') !== 'true') {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Display user name
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user) {
+                document.getElementById('userName').textContent = user.first_name + ' ' + user.last_name;
+            }
+
+            loadLivestock();
+        });
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('user');
+            localStorage.removeItem('isLoggedIn');
+            window.location.href = 'index.html';
+        }
+
+        function toggleAddForm() {
+            const formSection = document.getElementById('addFormSection');
+            if (formSection.style.display === 'none') {
+                formSection.style.display = 'block';
+                formSection.querySelector('select').focus();
+            } else {
+                formSection.style.display = 'none';
+                document.getElementById('addLivestockForm').reset();
+            }
+        }
+
+        async function loadLivestock() {
+            const livestockList = document.getElementById('livestockList');
+            livestockList.innerHTML = '<div class="col-12 text-center"><div class="spinner-border text-success"></div></div>';
+            
+            try {
+                const response = await fetch('api/livestock.php');
+                const livestock = await response.json();
+                
+                if (livestock.length === 0) {
+                    livestockList.innerHTML = `
+                        <div class="col-12 text-center">
+                            <p class="text-muted">No livestock added yet. Click "Add Livestock" to get started.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                livestockList.innerHTML = livestock.map(animal => `
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100">
+                            ${animal.image_path ? 
+                                `<img src="${animal.image_path}" class="card-img-top" alt="${animal.animal_type}" style="height: 200px; object-fit: cover;">` :
+                                `<div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                    <i class="fas fa-cow fa-3x text-muted"></i>
+                                </div>`
+                            }
+                            <div class="card-body">
+                                <h5 class="card-title">${animal.animal_type}</h5>
+                                <p class="card-text">
+                                    <strong>Age:</strong> ${animal.age} months<br>
+                                    ${animal.notes ? `<small class="text-muted">${animal.notes}</small>` : ''}
+                                </p>
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <button class="btn btn-outline-danger w-100" onclick="confirmDelete(${animal.id})">
+                                    <i class="fas fa-trash"></i> Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                livestockList.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger">Error loading livestock: ${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        async function handleAddLivestock(event) {
+            event.preventDefault();
+            const form = document.getElementById('addLivestockForm');
+            const formData = new FormData(form);
+            
+            try {
+                const response = await fetch('api/livestock.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showAlert(data.error, 'danger');
+                } else {
+                    showAlert('Livestock added successfully!', 'success');
+                    form.reset();
+                    toggleAddForm();
+                    loadLivestock();
+                }
+            } catch (error) {
+                showAlert('Error adding livestock: ' + error.message, 'danger');
+            }
+        }
+
+        function confirmDelete(id) {
+            if (confirm('Are you sure you want to delete this livestock? This action cannot be undone.')) {
+                deleteLivestock(id);
+            }
+        }
+
+        async function deleteLivestock(id) {
+            try {
+                const response = await fetch(`api/livestock.php`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `id=${id}`
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    showAlert(data.error, 'danger');
+                } else {
+                    showAlert('Livestock deleted successfully!', 'success');
+                    loadLivestock();
+                }
+            } catch (error) {
+                showAlert('Error deleting livestock: ' + error.message, 'danger');
+            }
+        }
+
+        function showAlert(message, type = 'success') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-4`;
+            alertDiv.style.zIndex = '9999';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 3000);
+        }
+    </script>
+</body>
+</html>

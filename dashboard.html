@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - DigiFarm</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-light">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="index.html"><i class="fas fa-leaf"></i> DigiFarm</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link active" href="dashboard.html">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="livestock.html">Livestock</a></li>
+                    <li class="nav-item"><a class="nav-link" href="crops.html">Crops</a></li>
+                    <li class="nav-item"><a class="nav-link" href="weather.html">Weather</a></li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <span class="text-white me-3" id="userName"></span>
+                    <button onclick="logout()" class="btn btn-outline-light">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Content -->
+    <div class="container mt-5 pt-4">
+        <div class="row">
+            <!-- Welcome Section -->
+            <div class="col-12 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h2 class="card-title" id="welcomeMessage">Welcome!</h2>
+                        <p class="card-text text-muted">Manage your farm activities efficiently with DigiFarm.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">Livestock</h5>
+                            <i class="fas fa-cow fa-2x text-success"></i>
+                        </div>
+                        <h3 class="mb-3" id="totalLivestock">0</h3>
+                        <p class="card-text text-muted">Total Animals</p>
+                        <a href="livestock.html" class="btn btn-success">Manage Livestock</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">Crops</h5>
+                            <i class="fas fa-seedling fa-2x text-success"></i>
+                        </div>
+                        <h3 class="mb-3" id="totalCrops">0</h3>
+                        <p class="card-text text-muted">Active Crops</p>
+                        <a href="crops.html" class="btn btn-success">Manage Crops</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">Weather</h5>
+                            <i class="fas fa-cloud-sun fa-2x text-success"></i>
+                        </div>
+                        <h3 class="mb-3" id="currentTemp">--°C</h3>
+                        <p class="card-text text-muted" id="weatherDesc">Loading weather...</p>
+                        <a href="weather.html" class="btn btn-success">View Forecast</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="col-12 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">Recent Activity</h5>
+                        <div class="list-group" id="recentActivity">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-spinner fa-spin"></i> Loading activities...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem('isLoggedIn') !== 'true') {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Display user name
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user) {
+                document.getElementById('userName').textContent = user.first_name + ' ' + user.last_name;
+                document.getElementById('welcomeMessage').textContent = 'Welcome, ' + user.first_name + '!';
+            }
+
+            // Load dashboard data
+            loadDashboardData();
+        });
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('user');
+            localStorage.removeItem('isLoggedIn');
+            window.location.href = 'index.html';
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user) return;
+
+            try {
+                // Load livestock count
+                const livestockResponse = await fetch('config/get_livestock.php?user_id=' + user.id);
+                const livestockData = await livestockResponse.json();
+                if (livestockData.status === 'success') {
+                    document.getElementById('totalLivestock').textContent = livestockData.count || 0;
+                }
+
+                // Load weather data
+                const weatherResponse = await fetch('config/get_weather.php');
+                const weatherData = await weatherResponse.json();
+                if (weatherData.status === 'success') {
+                    document.getElementById('currentTemp').textContent = weatherData.temperature + '°C';
+                    document.getElementById('weatherDesc').textContent = weatherData.description;
+                }
+
+                // Load recent activity
+                const activityResponse = await fetch('config/get_activity.php?user_id=' + user.id);
+                const activityData = await activityResponse.json();
+                if (activityData.status === 'success') {
+                    const activityContainer = document.getElementById('recentActivity');
+                    activityContainer.innerHTML = '';
+
+                    activityData.activities.forEach(activity => {
+                        activityContainer.innerHTML += `
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">${activity.title}</h6>
+                                    <small class="text-muted">${activity.date}</small>
+                                </div>
+                                <p class="mb-1">${activity.description}</p>
+                            </div>
+                        `;
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+    </script>
+</body>
+</html>
